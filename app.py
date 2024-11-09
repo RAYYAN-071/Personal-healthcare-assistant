@@ -190,4 +190,31 @@ def main():
                 parental_history = st.text_area("Parental Medical History (optional):",
                                                 help="Enter any relevant medical conditions in your family")
                 personal_history = st.text_area("Personal Medical History:",
-                                                help="Enter any
+                                                help="Enter any relevant personal medical conditions (e.g., past surgeries, chronic illnesses)")
+
+                symptoms = st.text_area("Symptoms:",
+                                       help="Enter symptoms separated by commas (e.g., fever, cough, headache)")
+                test_results = st.text_area("Test Results (optional):",
+                                           help="Enter any relevant test results (e.g., blood tests, x-rays)")
+
+                submit_button = st.form_submit_button("Get Health Advice")
+
+                if submit_button:
+                    # Call the advice generation function
+                    advice = health_system.get_gpt_advice(age, weight, parental_history, personal_history, symptoms, test_results)
+
+                    # Display the advice
+                    st.subheader("Health Advice")
+                    st.write(advice)
+
+                    # Translate to Urdu if needed
+                    if st.checkbox("Translate to Urdu"):
+                        translated_advice = health_system.translate_to_urdu(advice)
+                        st.subheader("Urdu Translation")
+                        st.write(translated_advice)
+
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
+
+if __name__ == "__main__":
+    main()
