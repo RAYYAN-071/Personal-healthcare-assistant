@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 # API Keys Configuration
 HUGGING_FACE_TOKEN = "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"
-OPENAI_API_KEY = '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'
+OPENAI_API_KEY = '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'
 
 # Set API keys
 openai.api_key = OPENAI_API_KEY
