@@ -1,16 +1,3 @@
-The error you're encountering is due to Streamlit trying to cache a method that contains an unhashable argument (`self` in this case), which is not allowed by the `@st.cache_resource` decorator. To fix this issue, you can refactor your code to move the caching of resources to a separate function outside the class, or you can simply avoid caching methods that rely on instance variables (like `self`).
-
-Here’s how you can adjust your code:
-
-### Fix:
-
-1. **Remove caching from instance methods**: You can use caching for loading models, but it should not be tied to the instance method of the class.
-
-2. **Move `load_translation_models` and `load_symptom_analysis_model` to non-instance methods** that can be cached separately.
-
-Here’s the modified code:
-
-```python
 import openai
 import streamlit as st
 from transformers import pipeline, MarianMTModel, MarianTokenizer
@@ -29,7 +16,7 @@ OPENAI_API_KEY = 'sk-proj-h3_XxC70GJsWguKzjeZ3znhFB4XLxgVnIoevo2pt2HOYpZM1NbA-OZ
 openai.api_key = OPENAI_API_KEY
 huggingface_hub.login(token=HUGGING_FACE_TOKEN)
 
-# Cache translation models outside the class
+# Load translation models
 @st.cache_resource
 def load_translation_models():
     """Load translation models with caching"""
@@ -44,7 +31,7 @@ def load_translation_models():
         logger.error(f"Error loading translation models: {str(e)}")
         raise
 
-# Cache symptom analysis models outside the class
+# Load symptom analysis models
 @st.cache_resource
 def load_symptom_analysis_model():
     """Load symptom analysis model with caching"""
@@ -205,21 +192,24 @@ def main():
                 parental_history = st.text_area("Parental Medical History (optional):",
                                                 help="Enter any relevant medical conditions in your family")
                 personal_history = st.text_area("Personal Medical History:",
-                                                help="Enter any relevant personal medical conditions (e.g., past surgeries, chronic illnesses)")
+                                                help="Enter any previous or current medical conditions")
 
-                symptoms = st.text_area("Symptoms:",
-                                       help="Enter symptoms separated by commas (e.g., fever, cough, headache)")
-                test_results = st.text_area("Test Results (optional):",
-                                           help="Enter any relevant test results (e.g., blood tests, x-rays)")
+                st.subheader("🩺 Symptoms")
+                symptoms = st.text_input("Symptoms (comma-separated):", help="List the symptoms you are experiencing")
+
+                st.subheader("🔬 Test Results")
+                test_results = st.text_area("Test Results (optional):", help="Enter any recent test results")
 
                 submit_button = st.form_submit_button("Get Health Advice")
 
-                if submit_button:
-                    # Call the advice generation function
-                    advice = health_system.get_gpt_advice(age, weight, parental_history, personal_history, symptoms, test_results)
+            if submit_button:
+                # Get the health advice
+                advice = health_system.get_gpt_advice(age, weight, parental_history, personal_history, symptoms, test_results)
+                st.subheader("💡 Health Advice")
+                st.write(advice)
 
-                    # Display the advice
-                    st.subheader("Health Advice")
-                    st.write(advice)
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
 
-                    # Translate to Urdu if
+if __name__ == "__main__":
+    main()
