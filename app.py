@@ -189,4 +189,5 @@ def main():
                 st.subheader("📝 Medical History")
                 parental_history = st.text_area("Parental Medical History (optional):",
                                                 help="Enter any relevant medical conditions in your family")
-                personal_history = st.text_area("Personal Medical
+                personal_history = st.text_area("Personal Medical History:",
+                                                help="Enter any
