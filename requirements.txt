@@ -1,38 +1,5 @@
-# Core dependencies
-streamlit
-torch
-transformers
 openai
-huggingface-hub
-
-# Translation and NLP dependencies
-sentencepiece
-sacremoses
-protobuf
-tokenizers
-
-# Data processing
-numpy
-pandas
-scipy
-
-# HTTP and API dependencies
-requests
-aiohttp
-urllib3
-
-# Utility packages
-tqdm
-pillow
-pyyaml
-regex
-packaging
-
-# Optional dependencies for better performance
-nvidia-cuda-runtime-cu12  # Only if using CUDA-enabled GPU
-nvidia-cudnn-cu12         # Only if using CUDA-enabled GPU
-
-# Development and logging
-python-dotenv
-colorama
-typing-extensions
+streamlit
+transformers
+huggingface_hub
+torch
