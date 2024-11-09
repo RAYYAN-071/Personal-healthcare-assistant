@@ -1,6 +1,6 @@
-openai
 streamlit
 transformers
 huggingface_hub
 torch
 sentencepiece
+groq
