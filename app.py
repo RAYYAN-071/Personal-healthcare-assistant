@@ -1,3 +1,16 @@
+The error you're encountering is due to Streamlit trying to cache a method that contains an unhashable argument (`self` in this case), which is not allowed by the `@st.cache_resource` decorator. To fix this issue, you can refactor your code to move the caching of resources to a separate function outside the class, or you can simply avoid caching methods that rely on instance variables (like `self`).
+
+Here’s how you can adjust your code:
+
+### Fix:
+
+1. **Remove caching from instance methods**: You can use caching for loading models, but it should not be tied to the instance method of the class.
+
+2. **Move `load_translation_models` and `load_symptom_analysis_model` to non-instance methods** that can be cached separately.
+
+Here’s the modified code:
+
+```python
 import openai
 import streamlit as st
 from transformers import pipeline, MarianMTModel, MarianTokenizer
@@ -16,6 +29,46 @@ OPENAI_API_KEY = 'sk-proj-h3_XxC70GJsWguKzjeZ3znhFB4XLxgVnIoevo2pt2HOYpZM1NbA-OZ
 openai.api_key = OPENAI_API_KEY
 huggingface_hub.login(token=HUGGING_FACE_TOKEN)
 
+# Cache translation models outside the class
+@st.cache_resource
+def load_translation_models():
+    """Load translation models with caching"""
+    try:
+        return {
+            'en_ur_model': MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-en-ur"),
+            'en_ur_tokenizer': MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-ur"),
+            'ur_en_model': MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-ur-en"),
+            'ur_en_tokenizer': MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-ur-en")
+        }
+    except Exception as e:
+        logger.error(f"Error loading translation models: {str(e)}")
+        raise
+
+# Cache symptom analysis models outside the class
+@st.cache_resource
+def load_symptom_analysis_model():
+    """Load symptom analysis model with caching"""
+    try:
+        models = [
+            "yikuan8/ClinicalBERT",
+            "emilyalsentzer/Bio_ClinicalBERT",
+            "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext"
+        ]
+
+        for model_name in models:
+            try:
+                model = pipeline("text-classification", model=model_name)
+                logger.info(f"Successfully loaded model: {model_name}")
+                return model
+            except Exception as e:
+                logger.warning(f"Failed to load {model_name}: {str(e)}")
+                continue
+
+        raise Exception("Failed to load any symptom analysis model")
+    except Exception as e:
+        logger.error(f"Error loading symptom analysis model: {str(e)}")
+        raise
+
 class HealthAdviceSystem:
     def __init__(self):
         self.english_to_urdu_model = None
@@ -24,24 +77,10 @@ class HealthAdviceSystem:
         self.urdu_to_english_tokenizer = None
         self.symptom_analysis = None
 
-    @st.cache_resource
-    def load_translation_models(self):
-        """Load translation models with caching"""
-        try:
-            return {
-                'en_ur_model': MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-en-ur"),
-                'en_ur_tokenizer': MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-ur"),
-                'ur_en_model': MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-ur-en"),
-                'ur_en_tokenizer': MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-ur-en")
-            }
-        except Exception as e:
-            logger.error(f"Error loading translation models: {str(e)}")
-            raise
-
     def initialize_translation_models(self):
         """Initialize translation models with error handling"""
         try:
-            models = self.load_translation_models()
+            models = load_translation_models()
             self.english_to_urdu_model = models['en_ur_model']
             self.english_to_urdu_tokenizer = models['en_ur_tokenizer']
             self.urdu_to_english_model = models['ur_en_model']
@@ -51,34 +90,10 @@ class HealthAdviceSystem:
             st.error("Failed to load translation models. Please try again later.")
             raise
 
-    @st.cache_resource
-    def load_symptom_analysis_model(self):
-        """Load symptom analysis model with caching"""
-        try:
-            models = [
-                "yikuan8/ClinicalBERT",
-                "emilyalsentzer/Bio_ClinicalBERT",
-                "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext"
-            ]
-
-            for model_name in models:
-                try:
-                    model = pipeline("text-classification", model=model_name)
-                    logger.info(f"Successfully loaded model: {model_name}")
-                    return model
-                except Exception as e:
-                    logger.warning(f"Failed to load {model_name}: {str(e)}")
-                    continue
-
-            raise Exception("Failed to load any symptom analysis model")
-        except Exception as e:
-            logger.error(f"Error loading symptom analysis model: {str(e)}")
-            raise
-
     def initialize_symptom_analysis(self):
         """Initialize symptom analysis"""
         try:
-            self.symptom_analysis = self.load_symptom_analysis_model()
+            self.symptom_analysis = load_symptom_analysis_model()
             logger.info("Symptom analysis model loaded successfully")
         except Exception as e:
             logger.error(f"Error initializing symptom analysis: {str(e)}")
@@ -207,14 +222,4 @@ def main():
                     st.subheader("Health Advice")
                     st.write(advice)
 
-                    # Translate to Urdu if needed
-                    if st.checkbox("Translate to Urdu"):
-                        translated_advice = health_system.translate_to_urdu(advice)
-                        st.subheader("Urdu Translation")
-                        st.write(translated_advice)
-
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
-
-if __name__ == "__main__":
-    main()
+                    # Translate to Urdu if
