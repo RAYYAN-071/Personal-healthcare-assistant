@@ -9,11 +9,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # API Keys Configuration
-HUGGING_FACE_TOKEN = "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"
-GROQ_API_KEY = os.getenv("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")  # Ensure this environment variable is set
+GROQ_API_KEY = os.getenv("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")
+HUGGING_FACE_TOKEN = os.getenv("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")
 
-# Initialize Groq Client
-client = Groq(api_key=GROQ_API_KEY)
+# Initialize Groq Client with error handling
+client = None
+try:
+    if not GROQ_API_KEY:
+        raise ValueError("GROQ_API_KEY is not set. Please set it in your environment variables.")
+    client = Groq(api_key=GROQ_API_KEY)
+    logger.info("Groq client initialized successfully.")
+except Exception as e:
+    logger.error(f"Failed to initialize Groq client: {str(e)}")
+    raise
 
 class HealthAdviceSystem:
     def __init__(self):
@@ -107,37 +115,32 @@ class HealthAdviceSystem:
             logger.error(f"Error analyzing symptoms: {str(e)}")
             return None
 
-    def get_gpt_advice(self, age, weight, parental_history, personal_history, symptoms, test_results):
-        """Get medical advice using Groq API with error handling"""
+    def get_groq_advice(self, age, weight, parental_history, personal_history, symptoms, test_results):
+        """Get medical advice using the Groq API with error handling"""
         try:
             messages = [
-                {
-                    "role": "user",
-                    "content": f"""Provide personalized health advice based on the following information:
-                    Age: {age}
-                    Weight: {weight}kg
-                    Parental Medical History: {parental_history}
-                    Personal Medical History: {personal_history}
-                    Symptoms: {symptoms}
-                    Test Results: {test_results}
+                {"role": "user", "content": f"""Provide personalized health advice based on the following information:
+                Age: {age}
+                Weight: {weight}kg
+                Parental Medical History: {parental_history}
+                Personal Medical History: {personal_history}
+                Symptoms: {symptoms}
+                Test Results: {test_results}
 
-                    Please provide:
-                    1. Possible diagnosis (with disclaimer)
-                    2. Recommended diagnostic tests
-                    3. General health recommendations
-                    4. Diet and lifestyle suggestions
-                    5. When to seek immediate medical attention
-                    6. Explanation of medical terms in simple language"""
-                }
+                Please provide:
+                1. Possible diagnosis (with disclaimer)
+                2. Recommended diagnostic tests
+                3. General health recommendations
+                4. Diet and lifestyle suggestions
+                5. When to seek immediate medical attention
+                6. Explanation of medical terms in simple language"""}
             ]
 
-            # Use Groq client for chat completion
-            chat_completion = client.chat.completions.create(
+            response = client.chat.completions.create(
                 messages=messages,
                 model="llama3-8b-8192"
             )
-
-            return chat_completion.choices[0].message.content.strip()
+            return response.choices[0].message['content'].strip()
         except Exception as e:
             logger.error(f"Error getting advice from Groq API: {str(e)}")
             raise
@@ -191,27 +194,21 @@ def main():
                 parental_history = st.text_area("Parental Medical History (optional):",
                                                 help="Enter any relevant medical conditions in your family")
                 personal_history = st.text_area("Personal Medical History:",
-                                                help="Enter any personal medical conditions")
+                                                help="Enter any relevant medical conditions in your personal history")
+                symptoms = st.text_area("Symptoms:",
+                                        help="List symptoms separated by commas (e.g., headache, nausea)")
+                test_results = st.text_area("Test Results (optional):",
+                                            help="List any relevant test results")
 
-                symptoms = st.text_input("Symptoms:", help="Enter symptoms separated by commas")
-                test_results = st.text_area("Test Results (if any):", help="Enter any recent test results")
-
-                # Submit button
                 submitted = st.form_submit_button("Get Advice")
 
-                # Process form data
-                if submitted:
-                    with st.spinner("Analyzing symptoms and generating advice..."):
-                        advice = health_system.get_gpt_advice(
-                            age=age,
-                            weight=weight,
-                            parental_history=parental_history,
-                            personal_history=personal_history,
-                            symptoms=symptoms,
-                            test_results=test_results
-                        )
-                        st.subheader("🩺 Health Advice")
-                        st.write(advice)
+            if submitted:
+                advice = health_system.get_groq_advice(age, weight, parental_history, personal_history, symptoms, test_results)
+                st.subheader("🩺 Health Advice")
+                st.write(advice)
 
     except Exception as e:
-        st.error(f"An error occurred: {e}")
+        st.error(f"An error occurred: {str(e)}")
+
+if __name__ == "__main__":
+    main()
