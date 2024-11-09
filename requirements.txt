@@ -1,6 +1,5 @@
 streamlit
 transformers
-huggingface_hub
-torch
-sentencepiece
 groq
+huggingface_hub
+sentencepiece
