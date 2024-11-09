@@ -1,0 +1,38 @@
+# Core dependencies
+streamlit==1.31.0
+torch==2.1.2
+transformers==4.36.2
+openai==1.12.0
+huggingface-hub==0.20.3
+
+# Translation and NLP dependencies
+sentencepiece==0.1.99
+sacremoses==0.1.1
+protobuf==4.25.2
+tokenizers==0.15.2
+
+# Data processing
+numpy==1.24.3
+pandas==2.1.4
+scipy==1.11.4
+
+# HTTP and API dependencies
+requests==2.31.0
+aiohttp==3.9.1
+urllib3==2.1.0
+
+# Utility packages
+tqdm==4.66.1
+pillow==10.2.0
+pyyaml==6.0.1
+regex==2023.10.3
+packaging==23.2
+
+# Optional dependencies for better performance
+nvidia-cuda-runtime-cu12==12.1.105  # Only if using CUDA-enabled GPU
+nvidia-cudnn-cu12==8.9.2.26        # Only if using CUDA-enabled GPU
+
+# Development and logging
+python-dotenv==1.0.0
+colorama==0.4.6
+typing-extensions==4.9.0
